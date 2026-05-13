@@ -1,8 +1,15 @@
 services:
   api:
     build: .
+    image: mi-api-md5:1.0.0  # Tag de imagen versionado
+    environment:
+      - API_ENV=${API_ENV:-production} # Manejo de variables de entorno
+    expose:
+      - "8000"
+    restart: always
+
   nginx:
-    image: nginx:alpine
+    image: nginx:1.25-alpine # Tag específico (no usar latest)
     ports:
       - "80:80"
     volumes:

@@ -29,3 +29,29 @@ Para ejecutar este proyecto en tu notebook (requiere Docker Desktop instalado):
 2.  **Levantar con Docker Compose:**
     ```bash
     docker compose up --build
+
+---
+
+## 📜 Scripts de Automatización
+
+El proyecto incluye scripts en Bash para facilitar la gestión. Ejecútalos desde la raíz:
+
+*   **Construir imágenes:**
+    ```bash
+    bash scripts/build.sh
+    ```
+*   **Iniciar el sistema:**
+    ```bash
+    bash scripts/start.sh
+    ```
+*   **Detener el sistema:**
+    ```bash
+    bash scripts/stop.sh
+    ```
+*   **Monitoreo de salud (Healthcheck cada 5s):**
+    ```bash
+    bash scripts/healthcheck.sh
+    ```
+    
+---
+
