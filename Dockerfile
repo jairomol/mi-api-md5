@@ -1,32 +1,27 @@
-# --- Etapa 1: Constructor (Builder) ---
+# --- Etapa 1: Constructor ---
 FROM python:3.9-slim AS builder
-
 WORKDIR /build
-# Aprovechamos el cache de capas de Docker copiando solo requirements primero
 COPY app/requirements.txt .
-RUN pip install --user --no-cache-dir -r requirements.txt
+# Instalamos globalmente en esta etapa para copiarlo fácil después
+RUN pip install --no-cache-dir -r requirements.txt
 
-# --- Etapa 2: Producción (Final) ---
-# --- Etapa 2: Producción (Final) ---
+# --- Etapa 2: Producción ---
 FROM python:3.9-slim AS runner
-
-# Creamos el usuario primero
-RUN useradd -m myuser
 WORKDIR /app
 
-# Copiamos las librerías desde el builder
-COPY --from=builder /root/.local /home/myuser/.local
-# Copiamos el código y le damos la propiedad al usuario (Clave para seguridad)
+# Copiamos las librerías del sitio de Python directamente
+COPY --from=builder /usr/local/lib/python3.9/site-packages /usr/local/lib/python3.9/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
+
+# Copiamos el código y damos permisos al usuario
+RUN useradd -m myuser
 COPY --chown=myuser:myuser app/ .
 
-# Ajustamos las rutas para el nuevo usuario
-ENV PATH=/home/myuser/.local/bin:$PATH
+# Variables de entorno críticas
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-EXPOSE 8000
-
-# Cambiamos al usuario
 USER myuser
+EXPOSE 8000
 
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

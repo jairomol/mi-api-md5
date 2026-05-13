@@ -29,4 +29,21 @@ jobs:
           # (Aquí van tus pruebas de curl que ya funcionan)
           sleep 10
           curl -f http://localhost/health || exit 1
+          - name: Start Environment
+        run: docker compose up -d
+
+      - name: Wait for API and Check Logs
+        run: |
+          sleep 15
+          docker compose logs  # Esto nos mostrará el error si la API murió
+          
+      - name: Healthcheck & Logic Validation
+        run: |
+          # Reintento simple para el Healthcheck
+          curl --retry 5 --retry-delay 5 -f http://localhost/health || exit 1
+          
+          # Validación MD5
+          curl -s -X POST http://localhost/validate-md5 \
+            -H "Content-Type: application/json" \
+            -d '{"data": 123, "md5": "202cb962ac59075b964b07152d234b70"}' | grep "202cb962ac59075b964b07152d234b70"
 
