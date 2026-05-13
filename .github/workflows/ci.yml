@@ -1,0 +1,44 @@
+name: API Validation Pipeline
+
+on:
+  push:
+    branches: [ main ]  # Se activa cuando subes código a la rama principal
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest  # GitHub nos presta una compu con Linux
+
+    steps:
+      - name: 1. Descargar el código
+        uses: actions/checkout@v4
+
+      - name: 2. Construir el entorno (Docker)
+        run: docker-compose build
+
+      - name: 3. Levantar la API y Nginx
+        run: docker-compose up -d
+
+      - name: 4. Esperar a que la API esté lista
+        run: |
+          sleep 10  # Le damos 10 segundos para arrancar
+
+      - name: 5. Prueba de Healthcheck (GET)
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/health)
+          if [ $STATUS -eq 200 ]; then echo "API Saludable"; else exit 1; fi
+
+      - name: 6. Prueba de Validación MD5 (POST)
+        run: |
+          # Probamos con el 123 que ya sabemos que funciona
+          RESPONSE=$(curl -s -X POST http://localhost/validate-md5 \
+            -H "Content-Type: application/json" \
+            -d '{"data": 123, "md5": "202cb962ac59075b964b07152d234b70"}')
+          
+          # Verificamos que la respuesta contenga el hash correcto
+          echo $RESPONSE | grep "202cb962ac59075b964b07152d234b70"
+
+      - name: 7. Detener todo
+        if: always()  # Esto se hace aunque las pruebas fallen para limpiar
+        run: docker-compose down
