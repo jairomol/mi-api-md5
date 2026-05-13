@@ -2,7 +2,7 @@
 
 ![CI Status](https://github.com/jairomol/mi-api-md5/actions/workflows/ci.yml/badge.svg)
 
-Esta es una API REST profesional desarrollada con **FastAPI**, protegida por un proxy inverso **Nginx** y totalmente automatizada con **Docker** y **GitHub Actions**.
+Esta es una API REST hecha con **FastAPI**, protegida por un proxy inverso **Nginx**  automatizada con **Docker** y **GitHub Actions**.
 
 ---
 
