@@ -52,6 +52,13 @@ El proyecto incluye scripts en Bash para facilitar la gestión. Ejecútalos desd
     ```bash
     bash scripts/healthcheck.sh
     ```
-    
+
 ---
 
+## 🛡️ Buenas Prácticas Implementadas
+
+*   **Multi-stage Build:** El Dockerfile utiliza una etapa de compilación y otra de ejecución para reducir el tamaño de la imagen final y minimizar la superficie de ataque.
+*   **Seguridad (Non-root user):** La API no corre con privilegios de administrador (root) dentro del contenedor.
+*   **Cache Optimization:** Se ordenaron las instrucciones del Dockerfile para aprovechar el cache de capas de Docker, acelerando los builds.
+*   **Versionado (Tags):** Se utilizan tags específicos para las imágenes (`python:3.9-slim`, `nginx:1.25-alpine`) en lugar de `latest` para garantizar la estabilidad.
+*   **Separación de Responsabilidades:** Nginx gestiona la capa de red mientras que FastAPI se dedica exclusivamente a la lógica de negocio.
