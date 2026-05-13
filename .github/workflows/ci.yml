@@ -14,26 +14,23 @@ jobs:
       - name: 1. Descargar el código
         uses: actions/checkout@v4
 
-      - name: 2. Verificar archivos
-        run: ls -R  # Esto nos mostrará en el log si los archivos están donde deben
+      - name: 2. Construir y Levantar
+        # AQUÍ ESTÁ EL CAMBIO: "docker compose" en lugar de "docker-compose"
+        run: docker compose up -d --build
 
-      - name: 3. Construir y Levantar
-        run: docker-compose up -d --build
-
-      - name: 4. Esperar a que la API responda
+      - name: 3. Esperar a que la API responda
         run: |
-          # Intentará conectarse 5 veces antes de rendirse
-          for i in {1..5}; do
+          for i in {1..10}; do
             if curl -s http://localhost/health | grep "ok"; then
               echo "API Online!"
               exit 0
             fi
             echo "Esperando API..."
-            sleep 5
+            sleep 3
           done
           exit 1
 
-      - name: 5. Prueba de Validación MD5
+      - name: 4. Prueba de Validación MD5
         run: |
           curl -s -X POST http://localhost/validate-md5 \
             -H "Content-Type: application/json" \
