@@ -2,43 +2,39 @@ name: API Validation Pipeline
 
 on:
   push:
-    branches: [ main ]  # Se activa cuando subes código a la rama principal
+    branches: [ main ]
   pull_request:
     branches: [ main ]
 
 jobs:
   test-and-build:
-    runs-on: ubuntu-latest  # GitHub nos presta una compu con Linux
+    runs-on: ubuntu-latest
 
     steps:
       - name: 1. Descargar el código
         uses: actions/checkout@v4
 
-      - name: 2. Construir el entorno (Docker)
-        run: docker-compose build
+      - name: 2. Verificar archivos
+        run: ls -R  # Esto nos mostrará en el log si los archivos están donde deben
 
-      - name: 3. Levantar la API y Nginx
-        run: docker-compose up -d
+      - name: 3. Construir y Levantar
+        run: docker-compose up -d --build
 
-      - name: 4. Esperar a que la API esté lista
+      - name: 4. Esperar a que la API responda
         run: |
-          sleep 10  # Le damos 10 segundos para arrancar
+          # Intentará conectarse 5 veces antes de rendirse
+          for i in {1..5}; do
+            if curl -s http://localhost/health | grep "ok"; then
+              echo "API Online!"
+              exit 0
+            fi
+            echo "Esperando API..."
+            sleep 5
+          done
+          exit 1
 
-      - name: 5. Prueba de Healthcheck (GET)
+      - name: 5. Prueba de Validación MD5
         run: |
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/health)
-          if [ $STATUS -eq 200 ]; then echo "API Saludable"; else exit 1; fi
-
-      - name: 6. Prueba de Validación MD5 (POST)
-        run: |
-          # Probamos con el 123 que ya sabemos que funciona
-          RESPONSE=$(curl -s -X POST http://localhost/validate-md5 \
+          curl -s -X POST http://localhost/validate-md5 \
             -H "Content-Type: application/json" \
-            -d '{"data": 123, "md5": "202cb962ac59075b964b07152d234b70"}')
-          
-          # Verificamos que la respuesta contenga el hash correcto
-          echo $RESPONSE | grep "202cb962ac59075b964b07152d234b70"
-
-      - name: 7. Detener todo
-        if: always()  # Esto se hace aunque las pruebas fallen para limpiar
-        run: docker-compose down
+            -d '{"data": 123, "md5": "202cb962ac59075b964b07152d234b70"}' | grep "202cb962ac59075b964b07152d234b70"
