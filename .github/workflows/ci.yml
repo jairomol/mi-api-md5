@@ -1,49 +1,42 @@
 name: API Validation Pipeline
 
-on: [push]
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
   test-and-build:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
+      - name: 1. Descargar el código
+        uses: actions/checkout@v4
 
-      # BUENA PRÁCTICA: Cache de capas de Docker para velocidad
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build images
+      - name: 2. Construir imágenes
         run: docker compose build
 
-      # BUENA PRÁCTICA: Escaneo de seguridad (Checkov o similar)
-      - name: Run Static Analysis
-        run: |
-          echo "Escaneando vulnerabilidades básicas..."
-          # Aquí podrías usar herramientas como Trivy o Snyk
-
-      - name: Start Environment
+      - name: 3. Iniciar entorno
         run: docker compose up -d
 
-      - name: Healthcheck & Logic Validation
+      - name: 4. Esperar y verificar logs
         run: |
-          # (Aquí van tus pruebas de curl que ya funcionan)
-          sleep 10
-          curl -f http://localhost/health || exit 1
-          - name: Start Environment
-        run: docker compose up -d
-
-      - name: Wait for API and Check Logs
-        run: |
+          echo "Dando tiempo a la API para iniciar..."
           sleep 15
-          docker compose logs  # Esto nos mostrará el error si la API murió
-          
-      - name: Healthcheck & Logic Validation
+          docker compose logs api
+
+      - name: 5. Healthcheck & Logic Validation
         run: |
-          # Reintento simple para el Healthcheck
+          echo "Ejecutando Healthcheck con reintentos..."
           curl --retry 5 --retry-delay 5 -f http://localhost/health || exit 1
           
-          # Validación MD5
+          echo "Validando lógica MD5..."
           curl -s -X POST http://localhost/validate-md5 \
             -H "Content-Type: application/json" \
             -d '{"data": 123, "md5": "202cb962ac59075b964b07152d234b70"}' | grep "202cb962ac59075b964b07152d234b70"
+
+      - name: 6. Limpiar (opcional)
+        if: always()
+        run: docker compose down
 
